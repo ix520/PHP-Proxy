@@ -9,11 +9,30 @@ if (empty($url_path)) {
 // 构建完整的目标 URL
 $url = 'https://cdn.jsdelivr.net/' . $url_path;
 
-// 设置响应头部
-header('Content-Type: text/plain; charset=utf-8');
-header('Content-Disposition: inline; filename="' . basename($url) . '"');
-header('Content-Transfer-Encoding: binary');
-header('Accept-Ranges: bytes');
+// 获取文件扩展名
+$file_extension = pathinfo(parse_url($url, PHP_URL_PATH), PATHINFO_EXTENSION);
+
+// 根据扩展名判断 `Content-Type`
+$content_types = [
+    'html' => 'text/html',
+    'htm' => 'text/html',
+    'css' => 'text/css',
+    'js' => 'application/javascript',
+    'json' => 'application/json',
+    'jpg' => 'image/jpeg',
+    'jpeg' => 'image/jpeg',
+    'png' => 'image/png',
+    'gif' => 'image/gif',
+    'svg' => 'image/svg+xml',
+    'txt' => 'text/plain',
+];
+
+$content_type = $content_types[$file_extension] ?? 'application/octet-stream';
+
+// **重点修改**：只有文件时才设置 `Content-Type`，如果是目录请求，则不处理 `Content-Type`
+if (!empty($file_extension)) {
+    header('Content-Type: ' . $content_type . '; charset=utf-8');
+}
 
 // 使用 cURL 获取远程资源
 $ch = curl_init();
@@ -30,11 +49,14 @@ if (isset($_SERVER['HTTP_REFERER'])) {
 }
 
 $data_down = curl_exec($ch);
-if ($data_down === false) {
-    die("代理时发生错误");
-}
-
+$http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+$content_type_remote = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
 curl_close($ch);
+
+// **重点修改**：如果是 HTML 类型但没有文件扩展名，则手动设置 `Content-Type`
+if (empty($file_extension) && strpos($content_type_remote, 'text/html') !== false) {
+    header('Content-Type: text/html; charset=utf-8');
+}
 
 // 直接输出内容
 echo $data_down;
