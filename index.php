@@ -44,10 +44,17 @@ curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
+//自定义Referer解决防盗链问题，如pixiv
+$custom_referer = ""; // 自定义的 Referer 值
 
-if (isset($_SERVER['HTTP_REFERER'])) {
+if (!empty($custom_referer)) {
+    // 如果自定义的 Referer 不为空，则使用自定义的 Referer
+    curl_setopt($ch, CURLOPT_REFERER, $custom_referer);
+} elseif (isset($_SERVER['HTTP_REFERER'])) {
+    // 如果自定义的 Referer 为空，但当前请求有 Referer，则使用当前请求的 Referer
     curl_setopt($ch, CURLOPT_REFERER, $_SERVER['HTTP_REFERER']);
 }
+
 
 $data_down = curl_exec($ch);
 $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
