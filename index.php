@@ -7,6 +7,7 @@ if (empty($url_path)) {
 }
 
 // 构建完整的目标 URL
+//URL末尾必须带 "/" 如果带/有问题再删除/
 $url = 'https://Github.com/' . $url_path;
 
 // 获取文件扩展名
