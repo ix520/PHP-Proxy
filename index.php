@@ -7,34 +7,35 @@ if (empty($url_path)) {
 }
 
 // 构建完整的目标 URL
-$url = 'https://cdn.jsdelivr.net/' . $url_path;
+$url = 'https://Github.com/' . $url_path;
 
 // 获取文件扩展名
 $file_extension = pathinfo(parse_url($url, PHP_URL_PATH), PATHINFO_EXTENSION);
 
 // 根据扩展名判断 `Content-Type`
 $content_types = [
-    'html' => 'text/html',
-    'htm' => 'text/html',
-    'css' => 'text/css',
-    'js' => 'application/javascript',
-    'json' => 'application/json',
-    'jpg' => 'image/jpeg',
-    'jpeg' => 'image/jpeg',
-    'png' => 'image/png',
-    'gif' => 'image/gif',
-    'svg' => 'image/svg+xml',
-    'txt' => 'text/plain',
+    'html' => 'text/html', 'htm' => 'text/html', 'css' => 'text/css', 'js' => 'application/javascript',
+    'json' => 'application/json', 'xml' => 'application/xml', 'csv' => 'text/csv', 'txt' => 'text/plain',
+    'md' => 'text/markdown', 'yaml' => 'text/yaml', 'yml' => 'text/yaml', 'jpg' => 'image/jpeg',
+    'jpeg' => 'image/jpeg', 'png' => 'image/png', 'gif' => 'image/gif', 'svg' => 'image/svg+xml',
+    'webp' => 'image/webp', 'ico' => 'image/vnd.microsoft.icon', 'bmp' => 'image/bmp', 'tif' => 'image/tiff',
+    'tiff' => 'image/tiff', 'avif' => 'image/avif', 'mp4' => 'video/mp4', 'webm' => 'video/webm',
+    'ogg' => 'video/ogg', 'ogv' => 'video/ogg', 'mov' => 'video/quicktime', 'avi' => 'video/x-msvideo',
+    'flv' => 'video/x-flv', 'mkv' => 'video/x-matroska', 'wmv' => 'video/x-ms-wmv', 'mp3' => 'audio/mpeg',
+    'wav' => 'audio/wav', 'flac' => 'audio/flac', 'aac' => 'audio/aac', 'oga' => 'audio/ogg', 'opus' => 'audio/opus',
+    'm4a' => 'audio/mp4', 'woff' => 'font/woff', 'woff2' => 'font/woff2', 'ttf' => 'font/ttf',
+    'otf' => 'font/otf', 'eot' => 'application/vnd.ms-fontobject', 'pdf' => 'application/pdf',
+    'doc' => 'application/msword', 'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'ppt' => 'application/vnd.ms-powerpoint', 'pptx' => 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    'xls' => 'application/vnd.ms-excel', 'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'zip' => 'application/zip', 'rar' => 'application/vnd.rar', '7z' => 'application/x-7z-compressed',
+    'tar' => 'application/x-tar', 'gz' => 'application/gzip', 'bz2' => 'application/x-bzip2',
+    'xz' => 'application/x-xz', 'apk' => 'application/vnd.android.package-archive', 'exe' => 'application/octet-stream',
+    'msi' => 'application/octet-stream', 'bat' => 'application/x-msdownload', 'sh' => 'application/x-sh',
+    'bin' => 'application/octet-stream', 'rtf' => 'application/rtf', 'wasm' => 'application/wasm'
 ];
 
-$content_type = $content_types[$file_extension] ?? 'application/octet-stream';
-
-// **重点修改**：只有文件时才设置 `Content-Type`，如果是目录请求，则不处理 `Content-Type`
-if (!empty($file_extension)) {
-    header('Content-Type: ' . $content_type . '; charset=utf-8');
-}
-
-// 使用 cURL 获取远程资源
+// **使用 cURL 获取远程资源**
 $ch = curl_init();
 curl_setopt($ch, CURLOPT_URL, $url);
 curl_setopt($ch, CURLOPT_HEADER, false);
@@ -53,10 +54,20 @@ $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 $content_type_remote = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
 curl_close($ch);
 
-// **重点修改**：如果是 HTML 类型但没有文件扩展名，则手动设置 `Content-Type`
-if (empty($file_extension) && strpos($content_type_remote, 'text/html') !== false) {
-    header('Content-Type: text/html; charset=utf-8');
+// **自动获取 `Content-Type` 逻辑**
+if (!empty($content_type_remote)) {
+    // 如果远程服务器返回了 `Content-Type`，则使用
+    header("Content-Type: $content_type_remote");
+} else {
+    // 远程 `Content-Type` 为空，则回退到本地匹配
+    $content_type = $content_types[$file_extension] ?? 'application/octet-stream';
+    header("Content-Type: $content_type");
 }
+/*
+// 使用本地Content-Type 仅根据扩展名匹配 `Content-Type`
+$content_type = $content_types[$file_extension] ?? 'application/octet-stream';
+header("Content-Type: $content_type");
+*/
 
 // 直接输出内容
 echo $data_down;
